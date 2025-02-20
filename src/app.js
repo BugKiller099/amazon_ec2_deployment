@@ -223,35 +223,56 @@ app.delete("/user/:id", async (req, res) =>{
 
 
 //UPdate 
-app.put("/user/:id" , async(req, res) =>{
+app.patch("/user/:id" , async(req, res) =>{
     try{
-        const user = await User.findByIdAndUpdate(req.params.id, req.body, {new: true, runValidators: true});
-        if(!user){
-            return res.status(400).send("User not found");
+     
+
+        //define the allowed fields that can be updated
+        const ALLOWED_UPDATED = [ "firstName",
+            "lastName",
+            "password",
+            "age",
+            "gender",
+            "photoUrl",
+            "skills",
+        ];
+        // Extract the keys from the request body
+        const updates = Object.keys(req.body);
+        //Check if all the fields in the requeset body are allowed
+
+        const isValidUpdate = updates.every(field =>ALLOWED_UPDATED.includes(field));
+
+        //If any field is not allowed, return a 400 Bad Request response
+        if(!isValidUpdate){
+            return res.status(400).send("Invalid updates detected.");
+
+
         }
+
+        //if the password is being updated, hash it before saving 
+        if(req.body.password){
+            req.body.password = await bcrypt.hash(req.body.password ,10);
+
+        }
+        //Find the usr by ID and update the fields provided in the request body
+        const user = await User.findByIdAndUpdate(req.params.id , req.body,{
+            new: true, //Return the updated document
+            renValidators: true, //Run Mongoose validators on the update
+        });
+
+        //If no user is found with the given ID, return a 404 Not Found response
+        if(!user){
+            return res.status(404).send("User not found");
+        }
+
+        //send the updated user as the response
         res.send(user);
-
-    }catch(err){
-        res.status(400).send("Error updating user: "+err.message);
+    } catch(err){
+        //If any error occurs, return a 400 Bad Request response with the error message
+        res.status(400).send("Error updating user: " + err.message);
     }
-})
-app.get("/user" , async(req, res) =>{
-    const userEmail = req.body.emailId;
 
-    try {
-        console.log(userEmail);
-        const user = await User.findOne();
-        if(!user){
-            res.status(404).send("User not found");
-        }else {
-            res.send(user);
-        }
-       
-
-        // const users = await User.find({})
-    }catch(err){
-        res.status(400).send("Something went wrong ");
-    }
+    
 });
 //delete duplicate email ids from the mongoose database
 
