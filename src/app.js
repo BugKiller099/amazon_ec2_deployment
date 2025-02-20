@@ -253,7 +253,28 @@ app.get("/user" , async(req, res) =>{
         res.status(400).send("Something went wrong ");
     }
 });
+//delete duplicate email ids from the mongoose database
 
+async function getAggregateUsers() {
+    try{
+        const result = await User.aggregate([
+            { $group: { _id: "$emailId", count: { $sum: 1 }, docs: { $push: "$_id" } } },
+            { $match: { count: { $gt: 1 } } }
+        ]);
+
+        // Use a loop instead of .forEach()
+        for (let doc of result) {
+            doc.docs.shift(); // Keep one record and delete duplicates
+            await User.deleteMany({ _id: { $in: doc.docs } });
+        }
+
+        console.log("Duplicate users deleted successfully!");
+    }catch(error){
+        console.error("Aggregation error : " , error);
+    }
+}
+
+getAggregateUsers();
 // Find Users Named 'John' and Age >= 18
 async function findJohnUsers() {
     try {
