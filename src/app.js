@@ -44,6 +44,30 @@ app.post("/signup", async (req, res) => {
     }
 });
 
+
+//Use validaiotn for login 
+
+app.post("/login" , async (req, res)=>{
+    try{
+        const {emailId, password} =req.body;
+
+        const user = await User.findOne({emailId: emailId});
+        if(!user){
+            throw new Error("EmailId is not present in DB");
+        }
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if(isPasswordValid){
+            res.send("Login Successful!!!");
+
+        }else{
+            throw new Error("Passwrod is not correct try again");
+        }
+    }catch(err){
+            res.status(400).send("Error :" +err.message);
+        }
+    
+});
 // Find Users Named 'Ashif'
 async function findUser() {
     try {
