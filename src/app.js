@@ -3,8 +3,16 @@ const connectDB = require("./config/database");
 const User = require("./models/user");
 const { validateSignUpData} = require ("./utils/validation")
 const app = express();
-app.use(express.json());
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const cors = require("cors");
+const req = require("express/lib/request");
+const cookieParser = require("cookie-parser");
+
+app.use(express.json());
+app.use(cookieParser());
+
+app.use(cors());
 
 // Connect to Database and Start Server
 async function startServer() {
@@ -58,6 +66,15 @@ app.post("/login" , async (req, res)=>{
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if(isPasswordValid){
+
+            //Create a JWT TOKEN
+
+            const token = await jwt.sign({ _id: user._id}, "Ashif@123");
+            console.log(token);
+
+
+            //Add the token to cookie and send the response back to the user.
+            res.cookie("token" ,token);
             res.send("Login Successful!!!");
 
         }else{
@@ -67,6 +84,42 @@ app.post("/login" , async (req, res)=>{
             res.status(400).send("Error :" +err.message);
         }
     
+});
+
+app.get("/profile" , async(req, res)=>{
+    try{
+        const cookies = req.cookies  ;
+        console.log(cookies);
+        //validate a token
+    
+        const {token} =cookies;
+    
+        if(!token)
+        {
+            throw new Error("Invalid Token");
+        }
+    
+        const decodedMessage = await jwt.verify(token, "Ashif@123");
+    
+    
+        console.log(decodedMessage);
+        const {_id} =decodedMessage;
+    
+    
+    
+        console.log("Logged In use is: " + _id);
+    
+        const user = await User.findById(_id);
+        if(!user){
+            throw new Error("User does not exist");
+        }
+    
+        res.send(user);
+    } catch(err){
+        res.status(400).send("Error : "+ err.message);
+    }
+ 
+
 });
 // Find Users Named 'Ashif'
 async function findUser() {
