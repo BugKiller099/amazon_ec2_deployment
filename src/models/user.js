@@ -45,15 +45,7 @@ userSchema.index({ emailId: 1 }, { unique: true });
 
 
 
-// Force index creation asynchronously
-(async () => {
-    try {
-        await User.syncIndexes();
-        console.log("Indexes synced successfully.");
-    } catch (error) {
-        console.error("Error syncing indexes:", error);
-    }
-})();
+
 userSchema.methods.getJWT = async function() {
     const user = this;
 
@@ -77,4 +69,14 @@ userSchema.methods.validatePassword = async function(passwordInputByUser){
 
 }
 const User = model("User", userSchema);
+// Force index creation asynchronously
+(async () => {
+    try {
+        await User.syncIndexes();
+        console.log("Indexes synced successfully.");
+    } catch (error) {
+        console.error("Error syncing indexes:", error);
+    }
+})();
+
 module.exports = User;
