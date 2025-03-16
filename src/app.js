@@ -4,7 +4,7 @@ const User = require("./models/user");
 const { validateSignUpData} = require ("./utils/validation")
 const app = express();
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const cors = require("cors");
 const req = require("express/lib/request");
 const cookieParser = require("cookie-parser");
@@ -63,7 +63,7 @@ app.post("/login" , async (req, res)=>{
         if(!user){
             throw new Error("EmailId is not present in DB");
         }
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = await user.validatePassword(password);
 
         if(isPasswordValid){
 

@@ -2,7 +2,8 @@
 const mongoose = require('mongoose');
 
 const { Schema, model } = mongoose; 
-
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const userSchema = new Schema({
     firstName: { 
         type: String, 
@@ -42,7 +43,7 @@ const userSchema = new Schema({
 // Ensure index creation
 userSchema.index({ emailId: 1 }, { unique: true });
 
-const User = model("User", userSchema);
+
 
 // Force index creation asynchronously
 (async () => {
@@ -53,7 +54,7 @@ const User = model("User", userSchema);
         console.error("Error syncing indexes:", error);
     }
 })();
-userSchema.method.getJWT = async function() {
+userSchema.methods.getJWT = async function() {
     const user = this;
 
     const token = await jwt.sign({ _id: user._id}, "Ashif@123" , {
@@ -62,4 +63,18 @@ userSchema.method.getJWT = async function() {
 
     return token;
 }
+
+userSchema.methods.validatePassword = async function(passwordInputByUser){
+    const user = this;
+    const passwordHash =  user.password;
+    const isPasswordValid= await bcrypt.compare(
+        passwordInputByUser , 
+        passwordHash
+
+    );
+
+    return isPasswordValid;
+
+}
+const User = model("User", userSchema);
 module.exports = User;
