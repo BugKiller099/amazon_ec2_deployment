@@ -8,7 +8,7 @@ const bcrypt = require("bcrypt");
 const cors = require("cors");
 const req = require("express/lib/request");
 const cookieParser = require("cookie-parser");
-
+const {userAuth} = require("./middlewares/auth");
 app.use(express.json());
 app.use(cookieParser());
 
@@ -69,12 +69,15 @@ app.post("/login" , async (req, res)=>{
 
             //Create a JWT TOKEN
 
-            const token = await jwt.sign({ _id: user._id}, "Ashif@123");
+            const token = await jwt.sign({ _id: user._id}, "Ashif@123" , {
+                expiresIn: "7d",
+            });
             console.log(token);
 
 
             //Add the token to cookie and send the response back to the user.
-            res.cookie("token" ,token);
+            res.cookie("token" ,token ,{expires: new Date(Date.now() + 8*3600000),
+        });
             res.send("Login Successful!!!");
 
         }else{
@@ -86,40 +89,32 @@ app.post("/login" , async (req, res)=>{
     
 });
 
-app.get("/profile" , async(req, res)=>{
+app.get("/profile" , userAuth, async(req, res)=>{
     try{
-        const cookies = req.cookies  ;
-        console.log(cookies);
-        //validate a token
-    
-        const {token} =cookies;
-    
-        if(!token)
-        {
-            throw new Error("Invalid Token");
+      
+        
+        //validate a token this is alreqdy being done using userAuth as a middleware
+        const user = req.user;
+        if (!user) {
+            return res.status(404).send("ERROR: User data not found in request");
         }
-    
-        const decodedMessage = await jwt.verify(token, "Ashif@123");
-    
-    
-        console.log(decodedMessage);
-        const {_id} =decodedMessage;
-    
-    
-    
-        console.log("Logged In use is: " + _id);
-    
-        const user = await User.findById(_id);
-        if(!user){
-            throw new Error("User does not exist");
-        }
-    
-        res.send(user);
+
+        res.status(200).send(user); // Send user details
+
     } catch(err){
         res.status(400).send("Error : "+ err.message);
     }
  
 
+});
+
+//send connection request
+app.post("/sendConnectionRequest", userAuth,  async(req, res) =>{
+    //Sending a connection requeest
+
+    const user = req.user;
+    console.log("Sending connection request");
+    res.send(user.firstName + "send the connection request!");
 });
 // Find Users Named 'Ashif'
 async function findUser() {
