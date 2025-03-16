@@ -1,33 +1,3 @@
-// const mongoose = require('mongoose');
-
-// const {Schema, model} = mongoose; 
-// const userSchema = new Schema({
-//     firstName: {
-//         type: String ,
-//         required: true,
-//     },
-//     lastName: {
-//         type: String 
-
-//     },
-//     emailId: {
-//         type: String,
-//         required: true,
-//         unique: true,
-//     },
-//     password: {
-//         type: String
-//     },
-//     age:{
-//         type: Number
-//     },
-//     gender: {
-//         type: String
-//     }
-// });
-
-// const User =model("User", userSchema);
-// module.exports = User;
 
 const mongoose = require('mongoose');
 
@@ -83,5 +53,13 @@ const User = model("User", userSchema);
         console.error("Error syncing indexes:", error);
     }
 })();
+userSchema.method.getJWT = async function() {
+    const user = this;
 
+    const token = await jwt.sign({ _id: user._id}, "Ashif@123" , {
+        expiresIn: "7d",
+    });
+
+    return token;
+}
 module.exports = User;
