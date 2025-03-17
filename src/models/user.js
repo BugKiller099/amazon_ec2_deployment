@@ -37,11 +37,15 @@ const userSchema = new Schema({
     },
     skills:{
         type: [String],
+    },
+    about: {
+        type: String , 
+        default: "This is a default about of the user",
     }
 },{timestamps: true});
 
-// Ensure index creation
-userSchema.index({ emailId: 1 }, { unique: true });
+// // Ensure index creation
+// userSchema.index({ emailId: 1 }, { unique: true });
 
 
 
@@ -69,14 +73,6 @@ userSchema.methods.validatePassword = async function(passwordInputByUser){
 
 }
 const User = model("User", userSchema);
-// Force index creation asynchronously
-(async () => {
-    try {
-        await User.syncIndexes();
-        console.log("Indexes synced successfully.");
-    } catch (error) {
-        console.error("Error syncing indexes:", error);
-    }
-})();
+
 
 module.exports = User;

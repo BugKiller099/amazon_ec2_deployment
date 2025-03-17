@@ -13,13 +13,13 @@ authRouter.post("/signup", async (req, res) => {
         validateSignUpData(req);
 
 
-        const {firstName, lastName, emailId, password ,skills} =req.body;
+        const {firstName, lastName, emailId, password ,skills,about} =req.body;
 
         //Encrypt the password
         const passwordHash = await bcrypt.hash(password, 10);
         console.log(passwordHash);
         const user = new User({
-          firstName, lastName, emailId, password: passwordHash,skills,
+          firstName, lastName, emailId, password: passwordHash,skills,about
         });
         await user.save();
         res.status(201).send("User added successfully");
