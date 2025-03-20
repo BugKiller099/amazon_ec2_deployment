@@ -24,12 +24,18 @@ const userSchema = new Schema({
     age: { type: Number },
     gender: { 
         type: String,
-        validate: {
-            validator: function(value) {
-                return ["male", "female", "None"].includes(value);
-            },
-            message: props => `${props.value} is not a valid gender option.`
+
+        enum: {
+            values: ["male", "female","None"],
+            message: `{VALUE} is incorrect status type`
         }
+        // validate: {
+        //     validator: function(value) {
+        //         return ["male", "female", "None"].includes(value);
+        //     },
+        //     message: props => `${props.value} is not a valid gender option.`
+        // }
+        
     },
     photoUrl: {
         type: String, 
