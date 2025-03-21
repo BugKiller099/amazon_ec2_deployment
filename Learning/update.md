@@ -1,4 +1,4 @@
-# Update User API (PUT Method)
+ # Update User API (PUT Method)
 
 ## Overview
 This API endpoint allows updating an existing user's details using the HTTP PUT method.
