@@ -10,7 +10,7 @@ const userAuth =async (req, res, next) =>{
     //validate the token
 
     if(!token){
-        return res.status(401).send("ERROR: Token is missing!");
+        return res.status(401).send("ERROR: Please login!");
     }
 
     const decodedObj = await jwt.verify(token , "Ashif@123");

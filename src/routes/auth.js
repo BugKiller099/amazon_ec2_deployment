@@ -9,20 +9,46 @@ module.exports = authRouter;
 
 authRouter.post("/signup", async (req, res) => {
     try {
-        //VAlidation of data 
+        // Validation of data 
         validateSignUpData(req);
 
+        const { 
+            firstName, 
+            lastName, 
+            emailId, 
+            password, 
+            skills, 
+            about, 
+            age, 
+            gender 
+        } = req.body;
 
-        const {firstName, lastName, emailId, password ,skills,about, age, gender} =req.body;
-
-        //Encrypt the password
+        // Encrypt the password
         const passwordHash = await bcrypt.hash(password, 10);
         console.log(passwordHash);
+        
         const user = new User({
-          firstName, lastName, emailId, password: passwordHash,skills,about ,age, gender
+            firstName, 
+            lastName, 
+            emailId, 
+            password: passwordHash, 
+            skills, 
+            about, 
+            age, 
+            gender
         });
-        await user.save();
-        res.status(201).send("User added successfully");
+        
+        const savedUser = await user.save();
+        const token = await savedUser.getJWT();
+
+        res.cookie("token", token, { 
+            expires: new Date(Date.now() + 8 * 3600000) 
+        });
+        
+        res.send({ 
+            message: "User Added successfully!", 
+            data: savedUser 
+        });
     } catch (err) {
         res.status(400).send("Error saving user: " + err.message);
     }
@@ -47,7 +73,7 @@ authRouter.post("/login" , async (req, res)=>{
             //Add the token to cookie and send the response back to the user.
             res.cookie("token" ,token ,{expires: new Date(Date.now() + 8*3600000),
         });
-            res.send("Login Successful!!!");
+            res.send(user);
 
         }else{
             throw new Error("Passwrod is not correct try again");
