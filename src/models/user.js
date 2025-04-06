@@ -39,7 +39,7 @@ const userSchema = new Schema({
     },
     photoUrl: {
         type: String, 
-        default: "https://geo.com"
+        default: "https://s3.amazonaws.com/37assets/svn/765-default-avatar.png"
     },
     skills:{
         type: [String],
