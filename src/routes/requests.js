@@ -98,12 +98,12 @@ requestRouter.post("/request/review/:status/:requestId" , userAuth, async(req, r
         const data = await connectionRequest.save();
 
         res.json({ message: "Connection request " + status , data});
-         // toUserId is login == toUserId
-         // accepted rejected;
+        //  toUserId is login == toUserId
+        //  accepted rejected;
 
-         //status should be interested
+        //  status should be interested
 
-         //allowed status is valid 
+        //  allowed status is valid 
 
 
     }catch(err){

@@ -32,8 +32,8 @@ const validateEditProfileData =(req) =>{
    const isEditAllowed = Object.keys(req.body).every((field )=> {
         return allowedEditFields.includes(field);
     });
-    console.log("Request Body Keys:", Object.keys(req.body));  // Debugging
-    console.log("Validation Passed:", isEditAllowed);         // Debugging
+    // console.log("Request Body Keys:", Object.keys(req.body));  // Debugging
+    // console.log("Validation Passed:", isEditAllowed);         // Debugging
 
     return isEditAllowed;
 };
