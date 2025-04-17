@@ -3,8 +3,10 @@ const socket = require("socket.io");
 const initializeSocket = (server) => {
     const io = socket(server, {
         cors: {
-            origin: "http://localhost:5173",
-        },
+            origin: "https://frontend-dev-ochre-phi.vercel.app", // your frontend domain
+            credentials: true, // allow sending cookies/headers
+            methods: ["GET", "POST"]
+          },
     });
 
     // Track connected users
