@@ -178,9 +178,15 @@ const cors = require("cors");
 const http = require("http");
 
 const cookieParser = require("cookie-parser");
+// ✅ Log the origin before CORS
+app.use((req, res, next) => {
+    console.log("Request Origin:", req.headers.origin);
+    next();
+  });
 const allowedOrigins = [
     "http://localhost:5173",
-    "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app"
+    "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app",
+    "https://frontend-dev-ochre-phi.vercel.app"
   ];
   
   app.use(cors({
