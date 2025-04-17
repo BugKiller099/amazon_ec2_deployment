@@ -170,7 +170,7 @@
 // findJohnUsers();
 
 
-
+require('dotenv').config();
 const express = require("express");
 const app = express();
 const connectDB = require("./config/database");
@@ -203,8 +203,8 @@ initializeSocket(server);
 connectDB()
     .then(() =>{
         console.log("DataBase connection established ...");
-        server.listen(7777, () =>{
-            console.log("Server is successfully listening on port 7777");
+        server.listen(process.env.PORT||7777, () =>{
+            console.log(`Server is successfully listening on port ${process.env.PORT || 7777}`);
         });
         
     })
