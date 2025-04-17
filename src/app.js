@@ -178,11 +178,16 @@ const cors = require("cors");
 const http = require("http");
 
 const cookieParser = require("cookie-parser");
-app.use(cors({
-    origin :"http://localhost:5173",
-    credentials: true,
-}
-));
+const allowedOrigins = [
+    "http://localhost:5173",
+    "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app"
+  ];
+  
+  app.use(cors({
+    origin: allowedOrigins,
+    credentials: true
+  }));
+  
 app.use(express.json());
 
 app.use(cookieParser());
