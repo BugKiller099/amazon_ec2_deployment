@@ -1,12 +1,17 @@
 const socket = require("socket.io");
-
+const { Chat } = require("../models/chat"); // Adjust path if needed
 const initializeSocket = (server) => {
     const io = socket(server, {
         cors: {
-            origin: "https://frontend-dev-ochre-phi.vercel.app", // your frontend domain
-            credentials: true, // allow sending cookies/headers
+            origin: [
+                "http://localhost:5173",
+                "https://frontend-dev-ochre-phi.vercel.app", // Main frontend domain
+                "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app", // Another frontend domain
+                "https://frontend-gmoon4fge-bugkiller099s-projects.vercel.app"  // Another frontend domain
+            ],
+            credentials: true,  // Allow sending cookies/headers
             methods: ["GET", "POST"]
-          },
+        },
     });
 
     // Track connected users
@@ -55,20 +60,89 @@ const initializeSocket = (server) => {
             }
         });
 
-        socket.on("sendMessage", ({ firstName, userId, targetUserId, text, photoUrl }) => {
-            const roomId = [userId, targetUserId].sort().join("_");
+        socket.on("sendMessage",async({ firstName, userId, targetUserId, text, photoUrl }) => {
             
-            console.log(`Message from ${firstName} in room ${roomId}: ${text}`);
+
+            // Save message to the database
+            try{
+                const roomId = [userId, targetUserId].sort().join("_");
+                console.log(`Message from ${firstName} in room ${roomId}: ${text}`);
+                let chat = await Chat.findOne({
+                    participants: {$all: [userId, targetUserId]},
+
+                   
+
+                });
+
+                if(!chat){
+                    chat = new Chat({
+                        participants: [userId, targetUserId],
+                        messages: [],
+                    });
+                }
+
+                chat.messages.push({
+                    senderId: userId,
+                    text,
+                    seen: false,
+                    seenAt: null,
+                });
+
+                await chat.save();
+                io.to(roomId).emit("receiveMessage", {
+                    userId,
+                    firstName,
+                    text,
+                    photoUrl,
+                    seen: false,
+                    timestamp: new Date().toISOString()
+                });
+ 
+            }catch(err){
+                console.error("Error saving message:", err);
+
+            }
             
             // Send the message to all clients in the room (including sender for consistency)
-            io.to(roomId).emit("receiveMessage", {
-                userId,
-                firstName,
-                text,
-                photoUrl,
-                timestamp: new Date().toISOString()
-            });
+            
         });
+
+        socket.on("markMessagesSeen", async ({ userId, targetUserId }) => {
+            try {
+              const chat = await Chat.findOne({
+                participants: { $all: [userId, targetUserId] },
+              });
+          
+              if (!chat) return;
+          
+              let updated = false;
+          
+              chat.messages.forEach((message) => {
+                if (
+                  !message.seen &&
+                  String(message.senderId) === String(targetUserId) // message was from the *other* user
+                ) {
+                  message.seen = true;
+                  message.seenAt = new Date();
+                  updated = true;
+                }
+              });
+          
+              if (updated) {
+                await chat.save();
+          
+                // Optionally notify the sender that messages were seen
+                const senderSocket = connectedUsers.get(targetUserId)?.socketId;
+                if (senderSocket) {
+                  io.to(senderSocket).emit("messagesSeen", { byUserId: userId });
+                }
+              }
+          
+            } catch (err) {
+              console.error("Error marking messages as seen:", err);
+            }
+          });
+          
 
         socket.on("disconnect", () => {
             console.log("Client disconnected:", socket.id);
