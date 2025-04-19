@@ -1,13 +1,4 @@
-// const mongoose = require('mongoose');
 
-
-// const connectDB = async ()=>{
-//     await mongoose.connect(
-//         "mongodb+srv://ashifdb:AshifGt456@cluster.nt5tos9.mongodb.net/library"
-//     );
-// };
-
-// module.exports = connectDB;
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
