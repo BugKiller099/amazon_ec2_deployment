@@ -13,7 +13,7 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
     try {
         await mongoose.connect(
-            "mongodb+srv://ashifdb:akVozdfu5LQOeORq@cluster.nt5tos9.mongodb.net/DevTinder",
+            process.env.MONGO_URI,
             {
                 useNewUrlParser: true,
                 useUnifiedTopology: true,
