@@ -18,16 +18,35 @@ app.use((req, res, next) => {
     console.log("Request Origin:", req.headers.origin);
     next();
   });
-const allowedOrigins = [
-    "http://localhost:5173",
-    "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app",
-    "https://frontend-dev-ochre-phi.vercel.app"
-  ];
+// const allowedOrigins = [
+//     "http://localhost:5173",
+//     "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app",
+//     "https://frontend-dev-ochre-phi.vercel.app"
+//   ];
   
-  app.use(cors({
-    origin: allowedOrigins,
-    credentials: true
-  }));
+//   app.use(cors({
+//     origin: allowedOrigins,
+//     credentials: true
+//   }));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app",
+  "https://frontend-dev-ochre-phi.vercel.app"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin like mobile apps or curl
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
+}));
+
   
 app.use(express.json());
 

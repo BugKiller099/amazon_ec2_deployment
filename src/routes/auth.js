@@ -91,15 +91,17 @@ authRouter.post("/login" , async (req, res)=>{
     
 });
 
-authRouter.post("/logout" ,async (req, res) =>{
-    es.cookie("token", null, {
-        httpOnly: true,
-        secure: true, // Important in production
-        sameSite: "None", // Required for cross-site cookies (e.g., Render backend + Vercel frontend)
-        expires: new Date(Date.now()),
-        path: "/",
-      });
-   res.send("Logout Susseccful");
-});
+authRouter.post("/logout", async (req, res) => {
+    res.cookie("token", "", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      path: "/",
+      expires: new Date(0), 
+    });
+  
+    res.send("Logout Successful");
+  });
+  
 
 module.exports = authRouter;
