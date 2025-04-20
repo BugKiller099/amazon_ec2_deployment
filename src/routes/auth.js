@@ -92,11 +92,13 @@ authRouter.post("/login" , async (req, res)=>{
 });
 
 authRouter.post("/logout" ,async (req, res) =>{
-   res.cookie("token", null, {
-    expires: new Date(Date.now()),
-
-   });
-
+    es.cookie("token", null, {
+        httpOnly: true,
+        secure: true, // Important in production
+        sameSite: "None", // Required for cross-site cookies (e.g., Render backend + Vercel frontend)
+        expires: new Date(Date.now()),
+        path: "/",
+      });
    res.send("Logout Susseccful");
 });
 
