@@ -29,7 +29,8 @@ app.use((req, res, next) => {
 //     credentials: true
 //   }));
 const allowedOrigins = [
-  "http://localhost:5173",
+  "http://localhost:5174",
+  "https://frontend-dev-ochre-phi.vercel.app"
   "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app",
   "https://frontend-dev-ochre-phi.vercel.app"
 ];

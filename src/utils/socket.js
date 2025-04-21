@@ -4,7 +4,8 @@ const initializeSocket = (server) => {
     const io = socket(server, {
         cors: {
             origin: [
-                "http://localhost:5173",
+                "http://localhost:5174",
+                "https://improved-frontend-dev-tinder.vercel.app/",
                 "https://frontend-dev-ochre-phi.vercel.app", // Main frontend domain
                 "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app", // Another frontend domain
                 "https://frontend-gmoon4fge-bugkiller099s-projects.vercel.app"  // Another frontend domain
@@ -17,10 +18,26 @@ const initializeSocket = (server) => {
     // Track connected users
     const connectedUsers = new Map();
 
-    io.on("connection", (socket) => {
-        console.log("🟢 New client connected:", socket.id);
-        console.log("Active socket IDs now:", Array.from(io.sockets.sockets.keys()));
+    // io.on("connection", (socket) => {
+    //     console.log("🟢 New client connected:", socket.id);
+    //     console.log("Active socket IDs now:", Array.from(io.sockets.sockets.keys()));
         
+    io.on("connection", (socket) => {
+        const userId = socket.handshake.query.userId;
+      
+        if (userId) {
+          connectedUsers.set(userId, { socketId: socket.id });
+          io.emit("userOnlineStatus", { userId, status: "online" });
+        }
+    socket.on("disconnect", () => {
+        for (const [userId, userData] of connectedUsers.entries()) {
+              if (userData.socketId === socket.id) {
+                connectedUsers.delete(userId);
+                io.emit("userOnlineStatus", { userId, status: "offline" });
+                break;
+              }
+            }
+        });
 
         socket.on("joinChat", ({ firstName, userId, targetUserId, photoUrl }) => {
             // Create a unique room ID by sorting and joining the user IDs
