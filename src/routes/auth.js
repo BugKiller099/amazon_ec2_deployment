@@ -43,8 +43,8 @@ authRouter.post("/signup", async (req, res) => {
 
            res.cookie("token", token, {
             httpOnly: true,
-            sameSite: "None",
-            // secure: true,
+            sameSite: "Lax",      // 🔁 Allow token to be sent in HTTP requests from same origin
+            secure: false,        // 🔁 Secure = false because you're on HTTP
             expires: new Date(Date.now() + 8 * 3600000)
         });
         
@@ -76,8 +76,8 @@ authRouter.post("/login" , async (req, res)=>{
             //Add the token to cookie and send the response back to the user.
             res.cookie("token", token, {
                 httpOnly: true,
-                sameSite: "None",
-                // secure: true,
+                sameSite: "Lax",      // 🔁 Allow token to be sent in HTTP requests from same origin
+                secure: false,        // 🔁 Secure = false because you're on HTTP
                 expires: new Date(Date.now() + 8 * 3600000)
             });
             res.send(user);
