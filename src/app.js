@@ -16,7 +16,8 @@ const allowedOrigins = [
   "http://localhost:5174",
   "https://frontend-dev-ochre-phi.vercel.app",
   "https://improved-frontend-dev-tinder.vercel.app",
-  "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app"
+  "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app",
+  "http://13.235.23.38",
 ];
 
 // ✅ Log the origin before CORS middleware
