@@ -9,7 +9,8 @@ const initializeSocket = (server) => {
         "https://improved-frontend-dev-tinder.vercel.app",
         "https://frontend-dev-ochre-phi.vercel.app",
         "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app",
-        "https://frontend-gmoon4fge-bugkiller099s-projects.vercel.app"
+        "https://frontend-gmoon4fge-bugkiller099s-projects.vercel.app",
+        "http://13.235.23.38",
       ],
       credentials: true,
       methods: ["GET", "POST"]
