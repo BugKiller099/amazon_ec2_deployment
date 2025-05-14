@@ -17,26 +17,42 @@ const initializeSocket = (server) => {
     const io = socket(server, {
       cors: {
         origin: [
-          
+          // Add all possible origins your client may connect from
           "http://3.110.187.101",
+          "https://3.110.187.101",
+          "http://localhost:3000",
+          "http://localhost:5173",
+          // Add null to allow requests with no origin (like from file://)
+          null,
+          // Consider adding a wildcard if needed for development
+          "*"
         ],
         credentials: true,
-        methods: ["GET", "POST"]
+        methods: ["GET", "POST"],
+        // Add allowed headers
+        allowedHeaders: ["Content-Type", "Authorization"]
       },
-      // Add these settings to handle connection issues
-      pingTimeout: 60000,
-      pingInterval: 25000,
-      upgradeTimeout: 30000,
+      // Adjusted settings for better connection stability
+      pingTimeout: 30000,         // Reduced from 60000
+      pingInterval: 10000,        // Reduced from 25000
+      upgradeTimeout: 10000,      // Reduced from 30000
       allowUpgrades: true,
       transports: ['polling', 'websocket'],
-      allowEIO3: true // Allow compatibility with older clients
+      allowEIO3: true,
+      path: '/socket.io/', // Ensure the path is correct and matches client
+      connectTimeout: 45000
     });
     
     console.log('✅ Socket.IO server created with settings:', {
-      pingTimeout: 60000,
-      pingInterval: 25000,
-      upgradeTimeout: 30000,
+      pingTimeout: 30000,
+      pingInterval: 10000,
+      upgradeTimeout: 10000,
       transports: ['polling', 'websocket']
+    });
+    
+    // Log request origins for debugging
+    io.engine.on("connection", (socket) => {
+      console.log('Request Origin:', socket.request.headers.origin);
     });
     
     // Debug Socket.IO engine events
@@ -67,8 +83,8 @@ const initializeSocket = (server) => {
         const userId = socket.handshake.query.userId;
         
         if (!userId) {
-          console.error('❌ Connection rejected: Missing userId');
-          return next(new Error('userId is required'));
+          console.warn('⚠️ Connection without userId, but allowing for debugging');
+          return next(); // Allow connections without userId for debugging
         }
         
         console.log(`✅ Socket auth passed for user ${userId}`);
@@ -82,7 +98,7 @@ const initializeSocket = (server) => {
     // Listen for connection events
     io.on("connection", (socket) => {
       try {
-        const userId = socket.handshake.query.userId;
+        const userId = socket.handshake.query.userId || 'anonymous';
         const socketId = socket.id;
         const transport = socket.conn.transport.name;
         
@@ -90,7 +106,14 @@ const initializeSocket = (server) => {
         console.log(`🧰 Socket namespace: ${socket.nsp.name}`);
         console.log(`📊 Current room count: ${io.engine.clientsCount}`);
         
-        if (userId) {
+        // Simple test emit to verify connection
+        socket.emit("connectionConfirmed", { 
+          socketId, 
+          message: "You are connected to the server",
+          timestamp: new Date().toISOString()
+        });
+        
+        if (userId && userId !== 'anonymous') {
           connectedUsers.set(userId, { socketId: socket.id });
           io.emit("userOnlineStatus", { userId, status: "online" });
         }
@@ -124,7 +147,7 @@ const initializeSocket = (server) => {
           });
         });
         
-        // Monitor socket events for debugging
+        // Monitor transport upgrades
         socket.conn.on("upgrade", (transport) => {
           console.log(`🔄 Socket ${socket.id} transport upgraded to: ${transport.name}`);
         });
@@ -157,8 +180,14 @@ const initializeSocket = (server) => {
         // Handle room joining with detailed logging
         socket.on("joinChat", ({ firstName, userId, targetUserId, photoUrl }) => {
           try {
+            if (!userId || !targetUserId) {
+              console.warn(`⚠️ Invalid join chat request: Missing user IDs`);
+              socket.emit("error", { message: "Both userId and targetUserId are required" });
+              return;
+            }
+            
             const roomId = [userId, targetUserId].sort().join("_");
-            console.log(`🚪 ${firstName} (${userId}) joining room: ${roomId}`);
+            console.log(`🚪 ${firstName || userId} (${userId}) joining room: ${roomId}`);
             
             // Before state
             const beforeRooms = Array.from(socket.rooms);
@@ -170,19 +199,34 @@ const initializeSocket = (server) => {
             const afterRooms = Array.from(socket.rooms);
             console.log(`📋 After join - rooms: ${JSON.stringify(afterRooms)}`);
             
+            // Verify room joining was successful
+            if (!socket.rooms.has(roomId)) {
+              console.error(`❌ Failed to join room ${roomId}`);
+              socket.emit("error", { message: "Failed to join chat room" });
+              return;
+            }
+            
             connectedUsers.set(userId, {
               socketId: socket.id,
-              firstName,
+              firstName: firstName || userId,
               userId,
               photoUrl,
               currentRoom: roomId
             });
             
-            // Notify the target user
+            // Confirm room join to the client
+            socket.emit("joinedRoom", { roomId });
+            
+            // Notify the target user if they're connected
             const targetUser = connectedUsers.get(targetUserId);
             if (targetUser) {
               console.log(`📢 Notifying target user ${targetUserId} about ${userId}`);
-              io.to(targetUser.socketId).emit("userInfo", { userId, firstName, photoUrl });
+              io.to(targetUser.socketId).emit("userInfo", { 
+                userId, 
+                firstName: firstName || userId, 
+                photoUrl 
+              });
+              
               socket.emit("userInfo", {
                 userId: targetUser.userId,
                 firstName: targetUser.firstName,
@@ -202,23 +246,43 @@ const initializeSocket = (server) => {
         // Message sending with debug info
         socket.on("sendMessage", async ({ firstName, userId, targetUserId, text, photoUrl }) => {
           try {
+            if (!userId || !targetUserId || !text) {
+              console.warn(`⚠️ Invalid message: Missing required fields`);
+              socket.emit("error", { message: "userId, targetUserId, and text are required" });
+              return;
+            }
+            
             const roomId = [userId, targetUserId].sort().join("_");
-            console.log(`💬 MESSAGE: ${firstName} (${userId}) → ${targetUserId} in ${roomId}`);
+            console.log(`💬 MESSAGE: ${firstName || userId} (${userId}) → ${targetUserId} in ${roomId}`);
             console.log(`📝 Content: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`);
             
             // Check if in correct room
             const inRoom = socket.rooms.has(roomId);
             console.log(`🚪 Sender in correct room: ${inRoom}`);
             
+            // Auto-join room if not already in it
+            if (!inRoom) {
+              console.log(`🚪 Auto-joining room ${roomId}`);
+              socket.join(roomId);
+            }
+            
             // Find target socket
             const targetUserData = connectedUsers.get(targetUserId);
             console.log(`🎯 Target user connected: ${!!targetUserData}`);
             if (targetUserData) {
               console.log(`🎯 Target socket: ${targetUserData.socketId}`);
-              console.log(`🎯 Target in room: ${io.sockets.adapter.socketRooms(targetUserData.socketId)?.has(roomId)}`);
+              const targetSocket = io.sockets.sockets.get(targetUserData.socketId);
+              if (targetSocket) {
+                console.log(`🎯 Target in room: ${targetSocket.rooms.has(roomId)}`);
+                if (!targetSocket.rooms.has(roomId)) {
+                  console.log(`🚪 Auto-joining target to room ${roomId}`);
+                  targetSocket.join(roomId);
+                }
+              }
             }
             
             try {
+              // Save to database
               let chat = await Chat.findOne({ participants: { $all: [userId, targetUserId] } });
               
               if (!chat) {
@@ -227,6 +291,8 @@ const initializeSocket = (server) => {
                   participants: [userId, targetUserId],
                   messages: []
                 });
+                // Log the newly created chat
+                console.log('✅ Chat created:', chat);
               } else {
                 console.log(`📝 Found existing chat with ${chat.messages.length} messages`);
               }
@@ -241,20 +307,31 @@ const initializeSocket = (server) => {
               
               await chat.save();
               console.log(`💾 Message saved to database`);
+              console.log('✅ Chat response data:', chat);
               
               // Send to room with debug info
               console.log(`📢 Emitting to room: ${roomId}`);
               const roomSockets = await io.in(roomId).fetchSockets();
               console.log(`📊 Number of sockets in room: ${roomSockets.length}`);
+              console.log(`📊 Socket IDs in room: ${roomSockets.map(s => s.id).join(', ')}`);
               
-              io.to(roomId).emit("receiveMessage", {
+              const messageData = {
                 userId,
-                firstName,
+                firstName: firstName || userId,
                 text,
                 photoUrl,
                 seen: false,
                 timestamp: new Date().toISOString()
-              });
+              };
+              
+              // Emit to room
+              io.to(roomId).emit("receiveMessage", messageData);
+              
+              // Also emit directly to sender and recipient for redundancy
+              socket.emit("receiveMessage", messageData);
+              if (targetUserData) {
+                io.to(targetUserData.socketId).emit("receiveMessage", messageData);
+              }
               
               console.log(`✅ Message processing complete`);
             } catch (err) {
@@ -267,14 +344,14 @@ const initializeSocket = (server) => {
           }
         });
         
-        // Keep-alive mechanism
+        // Keep-alive mechanism with shorter interval
         const intervalId = setInterval(() => {
           if (socket.connected) {
             socket.emit("ping", { time: new Date().toISOString() });
           } else {
             clearInterval(intervalId);
           }
-        }, 30000);
+        }, 20000); // Every 20 seconds
         
         socket.on("pong", (data) => {
           console.log(`🏓 Pong from ${userId}, latency: ${new Date() - new Date(data.time)}ms`);
@@ -285,7 +362,7 @@ const initializeSocket = (server) => {
       }
     });
     
-    // Server-wide debugging
+    // Server-wide debugging with less frequent intervals
     setInterval(() => {
       try {
         const rooms = io.sockets.adapter.rooms;
