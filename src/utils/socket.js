@@ -17,12 +17,8 @@ const initializeSocket = (server) => {
     const io = socket(server, {
       cors: {
         origin: [
-          "http://localhost:5174",
-          "https://improved-frontend-dev-tinder.vercel.app",
-          "https://frontend-dev-ochre-phi.vercel.app",
-          "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app",
-          "https://frontend-gmoon4fge-bugkiller099s-projects.vercel.app",
-          "http://13.235.23.38",
+          
+          "http://3.110.187.101",
         ],
         credentials: true,
         methods: ["GET", "POST"]
