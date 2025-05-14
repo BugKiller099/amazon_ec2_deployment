@@ -396,8 +396,144 @@
 
 // module.exports = initializeSocket;
 
-const socket = require("socket.io");
-const { Chat } = require("../models/chat");
+// const socket = require("socket.io");
+// const { Chat } = require("../models/chat");
+
+// const initializeSocket = (server) => {
+//   const io = socket(server, {
+//     cors: {
+//       origin: [
+//         "http://localhost:5174",
+//         "https://improved-frontend-dev-tinder.vercel.app",
+//         "https://frontend-dev-ochre-phi.vercel.app",
+//         "https://frontend-dev-git-main-bugkiller099s-projects.vercel.app",
+//         "https://frontend-gmoon4fge-bugkiller099s-projects.vercel.app",
+//         "http://3.110.187.101",
+//         "https://3.110.187.101",
+      
+//       ],
+//       credentials: true,
+//       methods: ["GET", "POST"]
+//     }
+//   });
+
+//   const connectedUsers = new Map();
+
+//   io.on("connection", (socket) => {
+//     const userId = socket.handshake.query.userId;
+
+//     if (userId) {
+//       connectedUsers.set(userId, { socketId: socket.id });
+//       io.emit("userOnlineStatus", { userId, status: "online" });
+//       console.log(`🟢 User ${userId} connected. Socket ID: ${socket.id}`);
+//     }
+
+//     socket.on("joinChat", ({ firstName, userId, targetUserId, photoUrl }) => {
+//       const roomId = [userId, targetUserId].sort().join("_");
+//       console.log(`${firstName} joining room: ${roomId}`);
+//       socket.join(roomId);
+
+//       connectedUsers.set(userId, {
+//         socketId: socket.id,
+//         firstName,
+//         userId,
+//         photoUrl,
+//         currentRoom: roomId
+//       });
+
+//       // Notify the target user
+//       const targetUser = connectedUsers.get(targetUserId);
+//       if (targetUser) {
+//         io.to(targetUser.socketId).emit("userInfo", { userId, firstName, photoUrl });
+//         socket.emit("userInfo", {
+//           userId: targetUser.userId,
+//           firstName: targetUser.firstName,
+//           photoUrl: targetUser.photoUrl
+//         });
+//       }
+//     });
+
+//     socket.on("sendMessage", async ({ firstName, userId, targetUserId, text, photoUrl }) => {
+//       const roomId = [userId, targetUserId].sort().join("_");
+//       console.log(`💬 ${firstName} (${userId}) → ${targetUserId} in ${roomId}: ${text}`);
+
+//       try {
+//         let chat = await Chat.findOne({ participants: { $all: [userId, targetUserId] } });
+
+//         if (!chat) {
+//           chat = new Chat({
+//             participants: [userId, targetUserId],
+//             messages: []
+//           });
+//         }
+
+//         chat.messages.push({
+//           senderId: userId,
+//           text,
+//           seen: false,
+//           seenAt: null
+//         });
+
+//         await chat.save();
+
+//         io.to(roomId).emit("receiveMessage", {
+//           userId,
+//           firstName,
+//           text,
+//           photoUrl,
+//           seen: false,
+//           timestamp: new Date().toISOString()
+//         });
+//       } catch (err) {
+//         console.error("❌ Error saving message:", err);
+//       }
+//     });
+
+//     socket.on("markMessagesSeen", async ({ userId, targetUserId }) => {
+//       try {
+//         const chat = await Chat.findOne({ participants: { $all: [userId, targetUserId] } });
+//         if (!chat) return;
+
+//         let updated = false;
+
+//         chat.messages.forEach((msg) => {
+//           if (!msg.seen && String(msg.senderId) === String(targetUserId)) {
+//             msg.seen = true;
+//             msg.seenAt = new Date();
+//             updated = true;
+//           }
+//         });
+
+//         if (updated) {
+//           await chat.save();
+//           const senderSocket = connectedUsers.get(targetUserId)?.socketId;
+//           if (senderSocket) {
+//             io.to(senderSocket).emit("messagesSeen", { byUserId: userId });
+//           }
+//         }
+//       } catch (err) {
+//         console.error("❌ Error marking messages as seen:", err);
+//       }
+//     });
+
+//     socket.on("disconnect", () => {
+//       console.log(`🔴 Client disconnected: ${socket.id}`);
+//       for (const [userId, userData] of connectedUsers.entries()) {
+//         if (userData.socketId === socket.id) {
+//           console.log(`User ${userId} (${userData.firstName}) went offline`);
+//           connectedUsers.delete(userId);
+//           io.emit("userOnlineStatus", { userId, status: "offline" });
+//           break;
+//         }
+//       }
+//     });
+//   });
+// };
+
+// module.exports = initializeSocket;
+
+const socket = require("socket.io")
+const { Chat } = require("../models/chat")
 
 const initializeSocket = (server) => {
   const io = socket(server, {
@@ -410,71 +546,85 @@ const initializeSocket = (server) => {
         "https://frontend-gmoon4fge-bugkiller099s-projects.vercel.app",
         "http://3.110.187.101",
         "https://3.110.187.101",
-      
       ],
       credentials: true,
-      methods: ["GET", "POST"]
-    }
-  });
+      methods: ["GET", "POST"],
+    },
+  })
 
-  const connectedUsers = new Map();
+  const connectedUsers = new Map()
 
   io.on("connection", (socket) => {
-    const userId = socket.handshake.query.userId;
+    const userId = socket.handshake.query.userId
 
     if (userId) {
-      connectedUsers.set(userId, { socketId: socket.id });
-      io.emit("userOnlineStatus", { userId, status: "online" });
-      console.log(`🟢 User ${userId} connected. Socket ID: ${socket.id}`);
+      connectedUsers.set(userId, { socketId: socket.id })
+      io.emit("userOnlineStatus", { userId, status: "online" })
+      console.log(`🟢 User ${userId} connected. Socket ID: ${socket.id}`)
     }
 
     socket.on("joinChat", ({ firstName, userId, targetUserId, photoUrl }) => {
-      const roomId = [userId, targetUserId].sort().join("_");
-      console.log(`${firstName} joining room: ${roomId}`);
-      socket.join(roomId);
+      const roomId = [userId, targetUserId].sort().join("_")
+      console.log(`${firstName} joining room: ${roomId}`)
+      socket.join(roomId)
 
       connectedUsers.set(userId, {
         socketId: socket.id,
         firstName,
         userId,
         photoUrl,
-        currentRoom: roomId
-      });
+        currentRoom: roomId,
+      })
 
       // Notify the target user
-      const targetUser = connectedUsers.get(targetUserId);
+      const targetUser = connectedUsers.get(targetUserId)
       if (targetUser) {
-        io.to(targetUser.socketId).emit("userInfo", { userId, firstName, photoUrl });
+        io.to(targetUser.socketId).emit("userInfo", { userId, firstName, photoUrl })
         socket.emit("userInfo", {
           userId: targetUser.userId,
           firstName: targetUser.firstName,
-          photoUrl: targetUser.photoUrl
-        });
+          photoUrl: targetUser.photoUrl,
+        })
       }
-    });
+    })
+
+    socket.on("getUserStatus", (targetUserId) => {
+      console.log(`Status requested for user ${targetUserId}`)
+
+      // Check if the target user is connected
+      const isUserConnected = connectedUsers.has(targetUserId)
+
+      // Send the status back to the requesting client
+      socket.emit("userOnlineStatus", {
+        userId: targetUserId,
+        status: isUserConnected ? "online" : "offline",
+      })
+
+      console.log(`Status for ${targetUserId}: ${isUserConnected ? "online" : "offline"}`)
+    })
 
     socket.on("sendMessage", async ({ firstName, userId, targetUserId, text, photoUrl }) => {
-      const roomId = [userId, targetUserId].sort().join("_");
-      console.log(`💬 ${firstName} (${userId}) → ${targetUserId} in ${roomId}: ${text}`);
+      const roomId = [userId, targetUserId].sort().join("_")
+      console.log(`💬 ${firstName} (${userId}) → ${targetUserId} in ${roomId}: ${text}`)
 
       try {
-        let chat = await Chat.findOne({ participants: { $all: [userId, targetUserId] } });
+        let chat = await Chat.findOne({ participants: { $all: [userId, targetUserId] } })
 
         if (!chat) {
           chat = new Chat({
             participants: [userId, targetUserId],
-            messages: []
-          });
+            messages: [],
+          })
         }
 
         chat.messages.push({
           senderId: userId,
           text,
           seen: false,
-          seenAt: null
-        });
+          seenAt: null,
+        })
 
-        await chat.save();
+        await chat.save()
 
         io.to(roomId).emit("receiveMessage", {
           userId,
@@ -482,52 +632,52 @@ const initializeSocket = (server) => {
           text,
           photoUrl,
           seen: false,
-          timestamp: new Date().toISOString()
-        });
+          timestamp: new Date().toISOString(),
+        })
       } catch (err) {
-        console.error("❌ Error saving message:", err);
+        console.error("❌ Error saving message:", err)
       }
-    });
+    })
 
     socket.on("markMessagesSeen", async ({ userId, targetUserId }) => {
       try {
-        const chat = await Chat.findOne({ participants: { $all: [userId, targetUserId] } });
-        if (!chat) return;
+        const chat = await Chat.findOne({ participants: { $all: [userId, targetUserId] } })
+        if (!chat) return
 
-        let updated = false;
+        let updated = false
 
         chat.messages.forEach((msg) => {
           if (!msg.seen && String(msg.senderId) === String(targetUserId)) {
-            msg.seen = true;
-            msg.seenAt = new Date();
-            updated = true;
+            msg.seen = true
+            msg.seenAt = new Date()
+            updated = true
           }
-        });
+        })
 
         if (updated) {
-          await chat.save();
-          const senderSocket = connectedUsers.get(targetUserId)?.socketId;
+          await chat.save()
+          const senderSocket = connectedUsers.get(targetUserId)?.socketId
           if (senderSocket) {
-            io.to(senderSocket).emit("messagesSeen", { byUserId: userId });
+            io.to(senderSocket).emit("messagesSeen", { byUserId: userId })
           }
         }
       } catch (err) {
-        console.error("❌ Error marking messages as seen:", err);
+        console.error("❌ Error marking messages as seen:", err)
       }
-    });
+    })
 
     socket.on("disconnect", () => {
-      console.log(`🔴 Client disconnected: ${socket.id}`);
+      console.log(`🔴 Client disconnected: ${socket.id}`)
       for (const [userId, userData] of connectedUsers.entries()) {
         if (userData.socketId === socket.id) {
-          console.log(`User ${userId} (${userData.firstName}) went offline`);
-          connectedUsers.delete(userId);
-          io.emit("userOnlineStatus", { userId, status: "offline" });
-          break;
+          console.log(`User ${userId} (${userData.firstName}) went offline`)
+          connectedUsers.delete(userId)
+          io.emit("userOnlineStatus", { userId, status: "offline" })
+          break
         }
       }
-    });
-  });
-};
+    })
+  })
+}
 
-module.exports = initializeSocket;
+module.exports = initializeSocket
